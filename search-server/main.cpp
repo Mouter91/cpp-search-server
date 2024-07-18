@@ -112,12 +112,6 @@ public:
     template <typename DocumentPredicate>
     vector<Document> FindTopDocuments(const string& raw_query, DocumentPredicate document_predicate) const {
 
-        for(const string& check_word : SplitIntoWords(raw_query)){
-            if(!IsValidWord(check_word) || !CheckWordForAddMinus(check_word)) {
-                throw invalid_argument("Invalid word: " + check_word);
-            }
-        }
-
         const Query query = ParseQuery(raw_query);
 
         auto matched_documents = FindAllDocuments(query, document_predicate);
