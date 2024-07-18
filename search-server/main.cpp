@@ -93,12 +93,16 @@ public:
     void AddDocument(int document_id, const string& document, DocumentStatus status,
                      const vector<int>& ratings) {
 
-        if(document_id < 0 || documents_.count(document_id) != 0) throw invalid_argument("Invalid document_id: " + document_id);
+        if(document_id < 0) {
+            throw invalid_argument("Invalid document_id: " + document_id);
+        }
+        if(documents_.count(document_id) != 0) {
+            throw invalid_argument("Invalid document_id: " + document_id);
+        }
 
         const vector<string> words = SplitIntoWordsNoStop(document);
         const double inv_word_count = 1.0 / words.size();
         for (const string& word : words) {
-            if(!IsValidWord(word)) throw invalid_argument("Invalid word: " + word);
             word_to_document_freqs_[word][document_id] += inv_word_count;
         }
         documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
@@ -109,7 +113,9 @@ public:
     vector<Document> FindTopDocuments(const string& raw_query, DocumentPredicate document_predicate) const {
 
         for(const string& check_word : SplitIntoWords(raw_query)){
-            if(!IsValidWord(check_word) || CheckWordForAddMinus(check_word)) throw invalid_argument("Invalid word: " + check_word);
+            if(!IsValidWord(check_word) || !CheckWordForAddMinus(check_word)) {
+                throw invalid_argument("Invalid word: " + check_word);
+            }
         }
 
         const Query query = ParseQuery(raw_query);
@@ -118,7 +124,7 @@ public:
 
         sort(matched_documents.begin(), matched_documents.end(),
              [](const Document& lhs, const Document& rhs) {
-                 if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+                 if (abs(lhs.relevance - rhs.relevance) < std::numeric_limits<double>::epsilon()) {
                      return lhs.rating > rhs.rating;
                  }
                  return lhs.relevance > rhs.relevance;
@@ -145,10 +151,6 @@ public:
     }
 
     tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const {
-
-        for(const string& check_word : SplitIntoWords(raw_query)){
-            if(!IsValidWord(check_word) || CheckWordForAddMinus(check_word)) throw invalid_argument("Invalid word: " + check_word);
-        }
 
         const Query query = ParseQuery(raw_query);
         vector<string> matched_words;
@@ -193,6 +195,9 @@ private:
     vector<string> SplitIntoWordsNoStop(const string& text) const {
         vector<string> words;
         for (const string& word : SplitIntoWords(text)) {
+            if(!IsValidWord(word)) {
+                throw invalid_argument("Invalid word: " + word);
+            }
             if (!IsStopWord(word)) {
                 words.push_back(word);
             }
@@ -226,7 +231,11 @@ private:
 
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
-        // Word shouldn't be empty
+
+        if(!IsValidWord(text) || !CheckWordForAddMinus(text)) {
+            throw invalid_argument("Invalid word: " + text);
+        }
+
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
@@ -235,13 +244,13 @@ private:
     }
 
     bool CheckWordForAddMinus(const string& word) const {
-        if(word == "-") return true;
+        if(word == "-") return false;
         int minus_count = 0;
         for(const char& c : word) {
             if(c == '-') minus_count++;
-            if(minus_count > 1) return true;
+            if(minus_count > 1) return false;
         }
-        return false;
+        return true;
     }
 
     struct Query {
