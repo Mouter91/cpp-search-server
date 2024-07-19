@@ -226,8 +226,20 @@ private:
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
 
-        if(!IsValidWord(text) || !CheckWordForAddMinus(text)) {
+        if(!IsValidWord(text) || text == "-") {
             throw invalid_argument("Invalid word: " + text);
+        }
+        int count_minus = 0;
+        for(const char& c : text) {
+            if(c == '-') {
+                ++count_minus;
+            }
+            else {
+                count_minus = 0;
+            }
+            if(count_minus > 1) {
+                throw invalid_argument("Invalid word: " + text);
+            }
         }
 
         if (text[0] == '-') {
@@ -237,15 +249,6 @@ private:
         return {text, is_minus, IsStopWord(text)};
     }
 
-    bool CheckWordForAddMinus(const string& word) const {
-        if(word == "-") return false;
-        int minus_count = 0;
-        for(const char& c : word) {
-            if(c == '-') minus_count++;
-            if(minus_count > 1) return false;
-        }
-        return true;
-    }
 
     struct Query {
         set<string> plus_words;
