@@ -226,20 +226,8 @@ private:
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
 
-        if(!IsValidWord(text) || text == "-") {
+        if(!IsValidWord(text) || text == "-" || (text.size() > 1 && text[1] == '-')) {
             throw invalid_argument("Invalid word: " + text);
-        }
-        int count_minus = 0;
-        for(const char& c : text) {
-            if(c == '-') {
-                ++count_minus;
-            }
-            else {
-                count_minus = 0;
-            }
-            if(count_minus > 1) {
-                throw invalid_argument("Invalid word: " + text);
-            }
         }
 
         if (text[0] == '-') {
